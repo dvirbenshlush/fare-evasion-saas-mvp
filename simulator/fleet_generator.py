@@ -18,13 +18,17 @@ SESSION       = requests.Session()
 
 AREAS = [
     {"name": "Tel Aviv",    "lat": (32.04, 32.10), "lon": (34.76, 34.82)},
-    {"name": "Jaffa",       "lat": (32.02, 32.06), "lon": (34.74, 34.78)},
+    {"name": "Jaffa",       "lat": (32.02, 32.06), "lon": (34.755, 34.78)},
     {"name": "Ramat Gan",   "lat": (32.07, 32.11), "lon": (34.80, 34.85)},
     {"name": "Holon",       "lat": (31.97, 32.02), "lon": (34.76, 34.80)},
     {"name": "Petah Tikva", "lat": (32.08, 32.12), "lon": (34.86, 34.93)},
-    {"name": "Bat Yam",     "lat": (32.00, 32.03), "lon": (34.74, 34.77)},
+    {"name": "Bat Yam",     "lat": (32.00, 32.03), "lon": (34.748, 34.77)},
     {"name": "Givatayim",   "lat": (32.06, 32.08), "lon": (34.80, 34.83)},
 ]
+
+# Hard bounding box — keeps buses on land (Mediterranean coast is ~34.748 at Bat Yam)
+LAT_MIN, LAT_MAX = 31.96, 32.13
+LON_MIN, LON_MAX = 34.748, 34.93
 
 STOPS = [
     "Central Bus Station", "City Hall", "University Gate", "Carmel Market",
@@ -54,15 +58,15 @@ class Bus:
         boarders     = random.randint(0, 8)
         self.onboard = max(0, self.onboard - alighters + boarders)
 
-        new_valid = round(boarders * (1 - self.evasion_rate))
-        if random.random() < 0.65:
-            self.nfc += new_valid
-        else:
-            self.qr  += new_valid
+        # Snapshot: validated = current onboard × (1 - evasion_rate)
+        # This keeps evaders stable regardless of how long the sim has been running
+        validated = round(self.onboard * (1 - self.evasion_rate))
+        self.nfc  = round(validated * 0.65)
+        self.qr   = validated - self.nfc
 
-        # Simulate GPS movement
-        self.lat = round(self.lat + random.uniform(-0.0015, 0.0015), 6)
-        self.lon = round(self.lon + random.uniform(-0.0015, 0.0015), 6)
+        # Simulate GPS movement — clamped to Gush Dan bounding box
+        self.lat = round(max(LAT_MIN, min(LAT_MAX, self.lat + random.uniform(-0.0015, 0.0015))), 6)
+        self.lon = round(max(LON_MIN, min(LON_MAX, self.lon + random.uniform(-0.0015, 0.0015))), 6)
 
     def push(self) -> None:
         try:

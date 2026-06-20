@@ -13,6 +13,33 @@ export interface BusState {
   source: 'poll' | 'manual'
 }
 
+export interface Inspector {
+  inspectorId: string
+  name: string
+  lat: number
+  lon: number
+  onDuty: boolean
+  connected: boolean
+  lastSeen: number
+}
+
+export interface NearbyBus {
+  busId: string
+  lat: number
+  lon: number
+  evaders: number
+  lastStop: string
+  distance: number // km
+}
+
+export interface ChatMessage {
+  id: number
+  from: string
+  fromName: string
+  text: string
+  ts: number
+}
+
 export interface KPI {
   totalBuses: number
   alertBuses: number
@@ -21,11 +48,16 @@ export interface KPI {
   evasionRate: number
 }
 
-export type WsMessage =
-  | { type: 'snapshot'; ts: number; buses: BusState[]; kpi: KPI }
-  | { type: 'busUpdate'; ts: number; bus: BusState }
-
 export interface LatLng {
   lat: number
   lon: number
 }
+
+export type WsMessage =
+  | { type: 'snapshot';         ts: number; buses: BusState[]; kpi: KPI; inspectors: Inspector[] }
+  | { type: 'busUpdate';        ts: number; bus: BusState }
+  | { type: 'inspector_update'; ts: number; inspector: Inspector }
+  | { type: 'auth_ok';          inspector: Inspector; buses: BusState[]; inspectors: Inspector[]; chatHistory: ChatMessage[]; kpi: KPI }
+  | { type: 'auth_fail';        reason: string }
+  | { type: 'nearby_buses';     buses: NearbyBus[]; ts: number }
+  | { type: 'chat_message';     id: number; from: string; fromName: string; text: string; ts: number }
